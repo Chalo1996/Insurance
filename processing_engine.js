@@ -1,43 +1,14 @@
 #!/usr/bin/env node
 
+/**
+ * The processing engine is responsible for using the inputs provide by the input engine
+ * to calculate the premium of the product. The inputs provided by the input engine are:
+ * - productDetails: The details of the product.
+ * - rates: The rates of the product.
+ */
+
 const ageCalc = require('./ageCalc');
-
-const rates = {
-  retRate: 0.00775,
-  gcRate: 0.00675,
-};
-
-const productDetails = {
-  coverType: {
-    multiple: 'multiple',
-    single: 'single',
-  },
-  sectionA: {
-    sumAssured: 40000000,
-    DoB: '1/1/2000',
-    termsInMonths: 196,
-    individualRetrenchmentCover: Boolean,
-  },
-  sectionB: {
-    sumAssured: 15000000,
-    termsInMonths: 84,
-    numberOfPartners: 5,
-    DoBOfBirthOfPartners: [
-      '2/1/2000',
-      '2/2/1988',
-      '2/2/1987',
-      '2/2/1986',
-      '2/2/1985',
-    ],
-  },
-  sectionC: {
-    premiumFrequency: {
-      single: 'single',
-      annual: 'annual',
-    },
-    NumOfPremiumInstallments: 1,
-  },
-};
+const { productDetails, rates } = require('./input_engine');
 
 // A function to return the cover type of the product.
 function getCoverType() {
@@ -61,18 +32,19 @@ function getSectionC() {
 function getMultipleInsurancePremium() {
   const covertype = getCoverType().multiple;
   const section = getSection(covertype);
-  console.log('Chosing Section B:\n\t', section);
+  // console.log('Chosing Section B:\n\t', section);
   const [P, T, N] = [section.sumAssured, section.termsInMonths, section.DoBOfBirthOfPartners.length];
-  console.log(`P: ${P}`);
-  console.log(`T: ${T}`);
-  console.log(`N: ${N}`);
+  // console.log(`P: ${P}`);
+  // console.log(`T: ${T}`);
+  // console.log(`N: ${N}`);
   const premium = (rates.gcRate * P * (T / 12)) + (rates.gcRate * P * (T / 12) * 0.7 * (N - 1));
   const ages = [];
-  for (age of section.DoBOfBirthOfPartners) {
+  for (const age of section.DoBOfBirthOfPartners) {
     ages.push(ageCalc(age));
   }
-  console.log(`DoBs: ${ages}`);
-  console.log(`Premium: ${premium}`);
+  return premium;
+  // console.log(`DoBs: ${ages}`);
+  // console.log(`Premium: ${premium}`);
 }
 
 function getSingleInsurancePremium() {
@@ -90,16 +62,17 @@ function getSingleInsurancePremium() {
 
 function singleIndividualCalc() {
   const coverType = getCoverType().single;
-  console.log(coverType);
+  // console.log(coverType);
 
   const section = getSection(coverType);
-  console.log('Chosing Section A:\n\t', section);
+  // console.log('Chosing Section A:\n\t', section);
   const termsInYrs = (section.termsInMonths / 12).toPrecision(3);
   const dob = ageCalc(section.DoB);
   const grossInsurancePremium = getSingleInsurancePremium();
-  console.log(grossInsurancePremium);
-  console.log(`Your age is: ${dob}`);
-  console.log(`Your terms in years are: ${termsInYrs}`);
+  // console.log(grossInsurancePremium);
+  // console.log(`Your age is: ${dob}`);
+  // console.log(`Your terms in years are: ${termsInYrs}`);
+  return grossInsurancePremium;
 }
 
 function multipleIndividualCalc() {
@@ -111,5 +84,18 @@ const calculator = {
   multiple: multipleIndividualCalc,
 };
 
-// calculator.single();
+// console.log('Calculating Premium...\n');
+// console.log('Calculating Premium for Single Individual...\n');
+calculator.single();
+// console.log('\nCalculating Premium for Multiple Individual...\n');
 calculator.multiple();
+
+module.exports = {
+  getCoverType,
+  getSection,
+  getSectionC,
+  getMultipleInsurancePremium,
+  getSingleInsurancePremium,
+  singleIndividualCalc,
+  multipleIndividualCalc,
+};
