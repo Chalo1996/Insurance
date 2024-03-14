@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 /**
+ *
  * The input engine consists of all the inputs the beneficiary should provide and or
  * fixed input variables by the insurance company that are used to calculate the
  * premium they should be charged for the insurance policy.
@@ -11,7 +12,7 @@ const rates = {
   gcRate: 0.00675,
 };
 
-const productDetails = {
+const inputs = {
   coverType: {
     multiple: 'multiple',
     single: 'single',
@@ -20,7 +21,7 @@ const productDetails = {
     sumAssured: 40000000,
     DoB: '1/1/2000',
     termsInMonths: 196,
-    individualRetrenchmentCover: Boolean,
+    individualRetrenchmentCover: false,
   },
   sectionB: {
     sumAssured: 15000000,
@@ -43,4 +44,4 @@ const productDetails = {
   },
 };
 
-module.exports = { productDetails, rates };
+module.exports = { inputs, rates };
