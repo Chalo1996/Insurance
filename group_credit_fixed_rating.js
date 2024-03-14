@@ -19,10 +19,16 @@ const productDetails = {
     individualRetrenchmentCover: Boolean,
   },
   sectionB: {
-    sumAssured: 0,
-    termsInMonths: 0,
-    numberOfPartners: 0,
-    DoBOfBirthOfPartners: [],
+    sumAssured: 15000000,
+    termsInMonths: 84,
+    numberOfPartners: 5,
+    DoBOfBirthOfPartners: [
+      '2/1/2000',
+      '2/2/1988',
+      '2/2/1987',
+      '2/2/1986',
+      '2/2/1985',
+    ],
   },
   sectionC: {
     premiumFrequency: {
@@ -52,21 +58,34 @@ function getSectionC() {
   return productDetails.sectionC;
 }
 
-function getInsuarancePremium() {
+function getMultipleInsurancePremium() {
+  const covertype = getCoverType().multiple;
+  const section = getSection(covertype);
+  console.log('Chosing Section B:\n\t', section);
+  const [P, T, N] = [section.sumAssured, section.termsInMonths, section.DoBOfBirthOfPartners.length];
+  console.log(`P: ${P}`);
+  console.log(`T: ${T}`);
+  console.log(`N: ${N}`);
+  const premium = (rates.gcRate * P * (T / 12)) + (rates.gcRate * P * (T / 12) * 0.7 * (N - 1));
+  const ages = [];
+  for (age of section.DoBOfBirthOfPartners) {
+    ages.push(ageCalc(age));
+  }
+  console.log(`DoBs: ${ages}`);
+  console.log(`Premium: ${premium}`);
+}
+
+function getSingleInsurancePremium() {
   const coverType = getCoverType().single;
   const section = getSection(coverType);
   const dob = ageCalc(section.DoB);
-  
 
-  let withRETgrossInsurancePremium = rates.gcRate * section.sumAssured * (section.termsInMonths / 12) + (rates.retRate - rates.gcRate) * section.sumAssured;
-  let noRETgrossInsurancePremium = rates.gcRate * section.sumAssured * (section.termsInMonths / 12);
+  const withRETgrossInsurancePremium = rates.gcRate * section.sumAssured * (section.termsInMonths / 12) + (rates.retRate - rates.gcRate) * section.sumAssured;
+  const noRETgrossInsurancePremium = rates.gcRate * section.sumAssured * (section.termsInMonths / 12);
 
   if (dob >= 18 && dob <= 70 && section.individualRetrenchmentCover) {
     return withRETgrossInsurancePremium;
-
-  } else {
-    return noRETgrossInsurancePremium;
-  }
+  } return noRETgrossInsurancePremium;
 }
 
 function singleIndividualCalc() {
@@ -77,15 +96,14 @@ function singleIndividualCalc() {
   console.log('Chosing Section A:\n\t', section);
   const termsInYrs = (section.termsInMonths / 12).toPrecision(3);
   const dob = ageCalc(section.DoB);
-  let grossInsurancePremium = getInsuarancePremium();
+  const grossInsurancePremium = getSingleInsurancePremium();
   console.log(grossInsurancePremium);
   console.log(`Your age is: ${dob}`);
   console.log(`Your terms in years are: ${termsInYrs}`);
 }
-// singleIndividualCalc();
 
 function multipleIndividualCalc() {
-  //
+  getMultipleInsurancePremium();
 }
 
 const calculator = {
@@ -93,4 +111,5 @@ const calculator = {
   multiple: multipleIndividualCalc,
 };
 
-calculator.single();
+// calculator.single();
+calculator.multiple();
