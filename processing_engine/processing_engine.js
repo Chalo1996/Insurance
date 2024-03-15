@@ -9,7 +9,7 @@
  */
 
 const ageCalc = require('./ageCalc');
-const { inputs, rates } = require('./input_engine');
+const { inputs, rates } = require('../input_engine');
 
 // A function to return the cover type of the product.
 function getCoverType() {

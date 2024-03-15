@@ -6,20 +6,24 @@
  * processing engine.
  */
 
+const { argv } = require('node:process');
+
 const {
   getCoverType,
   getSection,
   getSectionC,
   singleIndividualCalc,
   multipleIndividualCalc,
-} = require('./processing_engine');
+} = require('./processing_engine/processing_engine');
 
 let covertype = '';
 
-const coverType = getCoverType().multiple;
+const coverType = argv[2] || getCoverType().single;
 const section = getSection(coverType);
 const termsInYrs = (section.termsInMonths / 12).toPrecision(3);
 const benefit = section.individualRetrenchmentCover ? 'Yes' : 'No';
+const premiumType = (argv[6] ? coverType === 'multiple' : argv[4])
+  || getSectionC().premiumFrequency.annual;
 
 covertype = coverType === 'single'
   ? 'Single Individual & Sole Proprietorship'
@@ -54,7 +58,7 @@ const outputString = `\n\t\t\tPolicy Quotation\n
   -----------------------------------------------------------------------------
   |                              Policy Details                               |
   -----------------------------------------------------------------------------
-  |Type of Cover                  | ${covertype}    
+  |Type of Cover                  | ${covertype}   |    
   -----------------------------------------------------------------------------
   |Term in Months                 | ${section.termsInMonths}\t\t\t\t\t      |
   -----------------------------------------------------------------------------
@@ -62,7 +66,7 @@ const outputString = `\n\t\t\tPolicy Quotation\n
   -----------------------------------------------------------------------------
   |Initial Sum Assured            | ${section.sumAssured}\t\t\t              |
   -----------------------------------------------------------------------------
-  |Premium Frequency              | ${getSectionC().premiumFrequency.annual}\t\t\t\t      |
+  |Premium Frequency              | ${premiumType}\t\t\t\t      |
   -----------------------------------------------------------------------------
 
   ${coverType === 'single' ? retrenchmentString : ''}
