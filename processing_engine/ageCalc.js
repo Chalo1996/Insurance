@@ -5,17 +5,7 @@
  * @returns The Age Next Birthday of the beneficiary(ies)
  */
 
-function isValidDateFormat(dateString) {
-  // Regular expression to validate date format (MM/DD/YYYY)
-  const dateRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
-  return dateRegex.test(dateString);
-}
-
-function calculateAge(dob) {
-  if (typeof dob !== 'string' || !isValidDateFormat(dob)) {
-    throw new Error('Invalid date format. Please provide date in MM/DD/YYYY format.');
-  }
-
+export default function calculateAge(dob) {
   const dobDate = new Date(dob);
   const currentDate = new Date();
 
@@ -26,8 +16,7 @@ function calculateAge(dob) {
     // eslint-disable-next-line no-plusplus
     age--;
   }
-
+  
+  // ANB -> Age Next Birthday
   return age + 1;
 }
-
-module.exports = calculateAge;
