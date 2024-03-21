@@ -2,48 +2,63 @@
 /**
  * This is the output module. It is used to console the
  * computated data in a tabular format to the stdout.
+ * @usage
+ * @param {object} userInfo - The user information. This has the following structure:
+ *  const userInfo = {
+      sumAssured: Number, e.g, 40000
+      termsInMonths: Number, e.g, 60
+      individualRetrenchmentCover: Boolean, e.g true,
+      numberOfPartners: Number, e.g, 2
+      userDateOfBirths: Array, e.g, ['1/2/1967', '1/1/2000', '3/10/1977'],
+    };.
+ * @param {object} paymentOptions - The payment options. This has the following structure:
+    const paymentOptions = {
+      premiumFrequency: {
+        monthly: 'monthly',
+        annual: 'annual',
+      },
+      numOfPremiumInstallments: Number e.g, 4, // Quartely
+    };
+ * @param {object} coverType - The cover type. his has the following structure:
+    const coverType = {
+      single: 'single',
+      multiple: 'multiple',
+    };
+ * @param {object} memberDetails - The member details. An Array of objects of members. It has the following structure:
+    const memberDetails = [
+    {
+      memberName: "A N OTHER",
+      idNumber: 67676767,
+      DoB: '1/1/1981',
+      loanAccountNumber: 98776868,
+      loanAmountOrOSBalance: 5000000,
+      loanRapaymentPeriodInMonths: 36,
+      loanInterestRate: 14.5,
+      loanIssueDate: '1/1/2022',
+      fullSumAssured: 5000000,
+      permanentTotalDisability: 5000000,
+      lastExpense: 150000,
+      retrenchment: 5000000,
+      acceptanceTerms: 0,
+      },
+      ....
+      ....
+      ....
+    ]
+ * @returns {object} - The computed data. The grossInsurance Premium:
+ * @example
+ *  const grossInsurancePremium = calculateGroupCreditPremiumFixedRating(userInfo, paymentOptions, coverType, memberDetails);
  */
 
 // Custom Modules
-import ProcessingEngine from "./processing_engine/processing_engine.js";
 import { coverType, paymentOptions, userInfo } from './input_engine.js';
 import { memberDetails } from './member_details.js';
 import periodCalculators from './processing_engine/periodCalculators.js';
+import calculateGroupCreditPremiumFixedRating from './processing_engine/processing_engine.js';
 
-// This section is used to generate the client quotation.
-const engine = new ProcessingEngine();
-const covertype = engine.getCoverType();
-const totalPremiumsPayable = engine.premiumCalculator().toFixed(0);
-const annualPremiumPayable = (totalPremiumsPayable
-  / paymentOptions.numOfPremiumInstallments)
-  .toFixed(0);
+const grossInsurancePremium = calculateGroupCreditPremiumFixedRating(userInfo, paymentOptions, coverType, memberDetails);
 
-const clientQuotation = [
-  {
-    "Total Premiums Payable": totalPremiumsPayable,
-    "Annual Premium Payable": annualPremiumPayable,
-    "Cover Type": covertype,
-    "Payment Terms in Months": userInfo.termsInMonths,
-    "Payment Terms in Years": userInfo.termsInMonths / 12,
-  }
-];
-
-if (covertype === 'multiple') {
-  for(let i = 0; i < userInfo.userDateOfBirths.length; i++) {
-    clientQuotation.push({
-      "D.O.B": userInfo.userDateOfBirths[i],
-      "Age Next BirthDay": engine.getAge()[i]
-    });
-  }
-} else {
-  clientQuotation.push({
-    "D.O.B": userInfo.userDateOfBirths[0],
-    "Age Next BirthDay": engine.getAge()[0]
-  });
-}
-
-// This section is used to generate the users table.
-engine.main();
+// console.log(`\t\t\t\t\t\t\t\tGross Insurance Premium Quotation: ${grossInsurancePremium}`);
 
 const usersTableOutput = [];
 
@@ -77,8 +92,5 @@ memberDetails.forEach((member, idx) => {
     "ANNUAL PREMIUMS(TOTAL (KSHS))": member.totalAnnualPremiums,
     "MEDICAL REQUIREMENTS": member.medicalRequirements,
   })});
-
-// console.log("\n\t\t\t\t\t\t\t\t\t\t\tClient Quotation")
-// console.table(clientQuotation);
 
 console.table(usersTableOutput);

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * This module contains the subroutine to determine a client's
  * medical benefits.

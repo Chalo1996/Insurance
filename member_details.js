@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * This module contains a sample users data for testing the accuracy
  * of the computations.
