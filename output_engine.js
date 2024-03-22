@@ -58,8 +58,21 @@ import calculateGroupCreditPremiumFixedRating from './processing_engine/processi
 
 const grossInsurancePremium = calculateGroupCreditPremiumFixedRating(userInfo, paymentOptions, coverType, memberDetails);
 
-// console.log(`\t\t\t\t\t\t\t\tGross Insurance Premium Quotation: ${grossInsurancePremium}`);
+// Client Quotation Table
+const clientQuotation = {
+  "Sum Assured": userInfo.sumAssured,
+  "Gross Insurance Premium": grossInsurancePremium,
+  "Number Of Installments": paymentOptions.numOfPremiumInstallments,
+  "Annual Premium Payable": grossInsurancePremium / paymentOptions.numOfPremiumInstallments,
+};
 
+const clientQuotationOutput = [];
+clientQuotationOutput.push(clientQuotation);
+console.log("\n\t\t\t\t\tClient Quotation");
+console.table(clientQuotationOutput);
+
+
+// Group Costing Table
 const usersTableOutput = [];
 
 memberDetails.forEach((member, idx) => {
@@ -93,4 +106,5 @@ memberDetails.forEach((member, idx) => {
     "MEDICAL REQUIREMENTS": member.medicalRequirements,
   })});
 
+console.log("\n\t\t\t\t\t\Group Credit Costing Table");
 console.table(usersTableOutput);

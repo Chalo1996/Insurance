@@ -21,9 +21,7 @@ const userInfo = {
   termsInMonths: 36,
   individualRetrenchmentCover: false,
   numberOfPartners: 2,
-  userDateOfBirths: ['1/2/1967', '1/1/2000', '3/10/1977'],
+  userDateOfBirths: ['1/1/2000', '3/10/1977'],
 };
 
 export { coverType, paymentOptions, userInfo };
-
-
