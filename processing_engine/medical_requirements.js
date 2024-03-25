@@ -4,7 +4,7 @@
  */
 
 // Custom Modules
-import periodCalculators from "./periodCalculators.js";
+import periodCalculators from "./Calculators.js";
 
 const medicalRequirementsChoices = { A: 'A', B: 'B', C: 'C', D: 'D', E: 'E', F: 'F', HIV: 'HIV', NONE: 'NONE' };
 

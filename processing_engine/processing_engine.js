@@ -4,7 +4,7 @@
  */
 
 // Custom Modules
-import periodCalculators from './periodCalculators.js';
+import periodCalculators from './Calculators.js';
 import calculateMedicalRequirements from './medical_requirements.js';
 import constants from '../constants.js';
 

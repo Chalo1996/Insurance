@@ -53,7 +53,6 @@
 // Custom Modules
 import { coverType, paymentOptions, userInfo } from './input_engine.js';
 import { memberDetails } from './member_details.js';
-import periodCalculators from './processing_engine/periodCalculators.js';
 import calculateGroupCreditPremiumFixedRating from './processing_engine/processing_engine.js';
 
 const grossInsurancePremium = calculateGroupCreditPremiumFixedRating(userInfo, paymentOptions, coverType, memberDetails);
