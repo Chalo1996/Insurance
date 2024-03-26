@@ -59,27 +59,6 @@ const calculateGroupCreditPremiumFixedRating = (userInfo = {}, paymentOptions = 
     return isValid;
   };
 
-  const getFormular = () => {
-    /**
-     * This method is used to calculate the gross premium cover.
-     * In the case of a single user, the value of N diminishes to zero.
-     */
-
-    const [P, T, N] = [
-      userInfo.sumAssured,
-      userInfo.termsInMonths,
-      covertype === 'multiple'
-        ? userInfo.userDateOfBirths.length
-        : 1,
-    ];
-
-    const premiumFormular =
-      constants.gcRate * P * (T / 12) +
-      constants.gcRate * P * (T / 12) * constants.discount * (N - 1);
-
-    return premiumFormular;
-  };
-
   const validateDoBsLen = () => {
     /**
      * This method validates the length of date of births.
@@ -101,12 +80,29 @@ const calculateGroupCreditPremiumFixedRating = (userInfo = {}, paymentOptions = 
     }
   };
 
+  const getFormular = () => {
+    /**
+     * This method is used to calculate the gross premium cover.
+     * In the case of a single user, the value of N diminishes to zero.
+     */
+
+    const [P, T, N] = [
+      userInfo.sumAssured,
+      userInfo.termsInMonths,
+      covertype === 'multiple'
+        ? userInfo.userDateOfBirths.length
+        : 1,
+    ];
+
+    const premiumFormular =
+      constants.gcRate * P * (T / 12) +
+      constants.gcRate * P * (T / 12) * constants.discount * (N - 1);
+
+    return premiumFormular;
+  };
+
   // This method adds the refrenced fields to the memberDetails array for each member.
   // It must be called before they are refrenced.
-  const ages = userInfo.userDateOfBirths.map((dob) =>
-    periodCalculators.calculateAge(dob)
-  );
-
   memberDetails.forEach((member) => {
     member.ANB = periodCalculators.calculateAge(member.DoB);
     member.sumAssuredWithinFCL = Math.min(
