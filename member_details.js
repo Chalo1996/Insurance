@@ -5,7 +5,7 @@
 
 const memberDetails = [
   {
-    memberName: "A N OTHER",
+    memberName: 'A N OTHER',
     idNumber: 67676767,
     DoB: '1/1/1981',
     loanAccountNumber: 98776868,
@@ -18,11 +18,10 @@ const memberDetails = [
     lastExpense: 150000,
     retrenchment: 5000000,
     acceptanceTerms: 0,
-    
   },
 
   {
-    memberName: "B R OTHER",
+    memberName: 'B R OTHER',
     idNumber: 6775535,
     DoB: '1/1/1982',
     loanAccountNumber: 98776869,
@@ -35,11 +34,10 @@ const memberDetails = [
     lastExpense: 150000,
     retrenchment: 1500000,
     acceptanceTerms: 0,
-    
   },
 
   {
-    memberName: "F A OTHER",
+    memberName: 'F A OTHER',
     idNumber: 345373,
     DoB: '1/1/1998',
     loanAccountNumber: 98776870,
@@ -52,11 +50,10 @@ const memberDetails = [
     lastExpense: 150000,
     retrenchment: 15000000,
     acceptanceTerms: 0,
-    
   },
 
   {
-    memberName: "A N OTHER",
+    memberName: 'A N OTHER',
     idNumber: 67676767,
     DoB: '1/1/1981',
     loanAccountNumber: 98776871,
@@ -69,11 +66,10 @@ const memberDetails = [
     lastExpense: 150000,
     retrenchment: 20000000,
     acceptanceTerms: 0,
-    
   },
 
   {
-    memberName: "M O OTHER",
+    memberName: 'M O OTHER',
     idNumber: 22454636,
     DoB: '1/1/1976',
     loanAccountNumber: 98776872,
@@ -86,11 +82,10 @@ const memberDetails = [
     lastExpense: 150000,
     retrenchment: 9807654,
     acceptanceTerms: 0,
-    
   },
 
   {
-    memberName: "JANE DOE",
+    memberName: 'JANE DOE',
     idNumber: 24525252,
     DoB: '6/5/1978',
     loanAccountNumber: 98776873,
@@ -103,9 +98,7 @@ const memberDetails = [
     lastExpense: 150000,
     retrenchment: 40000000,
     acceptanceTerms: 50,
-    
-  }
-]
+  },
+];
 
 export { memberDetails };
-																
