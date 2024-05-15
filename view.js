@@ -3,7 +3,7 @@
 /**
  * @author Emmanuel Chalo <emmanuel.chalo@equitybank.co.ke>
  * @created 2012-04-08
- * @sumAssuredmary This custom view is for generating a customer quotation for the group credit.
+ * @summary This custom view is for generating a customer quotation for the group credit.
  * @category view
  * @env equity
  * @origin -
@@ -15,6 +15,7 @@
     Tabs,
     Form,
     Input,
+    InputNumber,
     Row,
     Col,
     Select,
@@ -23,7 +24,7 @@
     Switch,
     Button,
     Typography,
-    Notification,
+    notification,
     Table,
   } = A;
 
@@ -34,11 +35,6 @@
 
   const useState = React.useState;
   const useEffect = React.useEffect;
-
-  const [isQuotationTabEnable, setIsQuotationTabEnable] = React.useState(true);
-  const [isDefaultTab, setIsDefaultTab] = React.useState("userdetails");
-  const [formData, setFormData] = React.useState(null);
-  const [quotationData, setQuotationData] = React.useState(null);
 
   const TabIcon = () => (
     <span role='img' aria-label='result' className='anticon anticon-result'>
@@ -56,43 +52,153 @@
     </span>
   );
 
-  const countryCodes = {
-    Kenya: "+254",
-    Uganda: "+256",
-    Tanzania: "+255",
-    Rwanda: "+250",
-    Congo: "+123",
-    "South Sudan": "+211",
-  };
-  const ClientDetails = () => {
-    const [userName, SetUserName] = useState("");
-    const [country, setCountry] = useState("");
-    const [phone, setPhone] = useState("");
-    const [email, setEmail] = useState("");
-    const [coverType, setCoverType] = useState("");
-    const [dob, setDoB] = useState(null);
-    const [sumAssured, setSumAssured] = useState(1000000);
-    const [countryCode, setCountryCode] = useState("");
-    const [termsInMonths, setTermsInMonths] = useState(1);
-    const [numOfPartners, setNumOfPartners] = useState(0);
-    const [partnerDates, setPartnerDates] = useState(
-      Array(numOfPartners).fill(null)
-    );
-    const [frequency, setFrequency] = useState("Annual");
-    const [installments, setInstallments] = useState(1);
-    const [retrenchment, setRetrenchment] = useState(false);
-    const [quoteSubmitted, setQuoteSubmitted] = useState(false);
-    const [loading, setLoading] = useState(false);
+  const MainComponent = () => {
+    const [isQuotationTabEnable, setIsQuotationTabEnable] =
+      React.useState(true);
+    const [isDefaultTab, setIsDefaultTab] = React.useState("userdetails");
+    const [quotationData, setQuotationData] = React.useState(null);
+    const [formData, setFormData] = useState({
+      userName: "",
+      country: "",
+      phone: "",
+      email: "",
+      coverType: "",
+      dob: null,
+      sumAssured: 5000000,
+      countryCode: "",
+      termsInMonths: "",
+      numOfPartners: 0,
+      partnerDates: [],
+      frequency: "Annual",
+      installments: "",
+      retrenchment: false,
+      quoteSubmitted: false,
+      quotationData: null,
+      loading: false,
+    });
 
-    const handleNameChange = (e) => SetUserName(e.target.value);
-    const handleCountryChange = (value) => {
-      const selectedCode = countryCodes[value];
-      console.log("Selected Country", value);
-      console.log("Code", selectedCode);
-      setCountry(value);
-      setCountryCode(selectedCode);
+    const handleFormChange = (fieldName, value) => {
+      setFormData({
+        ...formData,
+        [fieldName]: value,
+      });
     };
-    const handlePhoneChange = (e) => setPhone(e.target.value);
+
+    const handleQuotationChange = (data) => {
+      setQuotationData(data);
+    };
+
+    const handleDefaultTabChange = (value) => {
+      setIsDefaultTab(value);
+    };
+
+    const handleIsQuotationTabEnableChange = (bool) => {
+      setIsQuotationTabEnable(bool);
+    };
+
+    return (
+      <Tabs
+        defaultActiveKey={isDefaultTab}
+        activeKey={isDefaultTab}
+        onChange={(key) => setIsDefaultTab(key)}
+      >
+        <TabPane
+          tab={
+            <span>
+              <TabIcon />
+              Client Details
+            </span>
+          }
+          key='userdetails'
+        >
+          <ClientDetails
+            formData={formData}
+            handleFormChange={handleFormChange}
+            handleQuotationChange={handleQuotationChange}
+            handleDefaultTabChange={handleDefaultTabChange}
+            handleIsQuotationTabEnableChange={handleIsQuotationTabEnableChange}
+          />
+        </TabPane>
+        <TabPane
+          tab={
+            <span>
+              <TabIcon />
+              Quotation
+            </span>
+          }
+          key='quotation'
+          disabled={isQuotationTabEnable}
+        >
+          {quotationData ? (
+            <Quotation formData={formData} quotationData={quotationData} />
+          ) : (
+            <h1>Nothing to display</h1>
+          )}
+        </TabPane>
+      </Tabs>
+    );
+  };
+
+  const ClientDetails = ({
+    formData,
+    handleFormChange,
+    handleQuotationChange,
+    handleDefaultTabChange,
+    handleIsQuotationTabEnableChange,
+  }) => {
+    const {
+      userName,
+      country,
+      phone,
+      email,
+      coverType,
+      dob,
+      sumAssured,
+      countryCode,
+      termsInMonths,
+      numOfPartners,
+      partnerDates,
+      frequency,
+      installments,
+      retrenchment,
+      quoteSubmitted,
+      loading,
+    } = formData;
+
+    const [form] = Form.useForm();
+
+    const handleNameChange = (e) =>
+      handleFormChange("userName", e.target.value);
+
+    const handleCountryCodeChange = (value) => {
+      let countryCode;
+      switch (value) {
+        case "Kenya":
+          countryCode = "+254";
+          break;
+        case "Uganda":
+          countryCode = "+256";
+          break;
+        case "Tanzania":
+          countryCode = "+255";
+          break;
+        case "Rwanda":
+          countryCode = "+250";
+          break;
+        case "Congo":
+          countryCode = "+123";
+          break;
+        case "South-Sudan":
+          countryCode = "+211";
+          break;
+        default:
+          countryCode = "000";
+      }
+      handleFormChange("country", value);
+      handleFormChange("countryCode", countryCode);
+    };
+
+    const handlePhoneChange = (e) => handleFormChange("phone", e.target.value);
 
     const validatePhone = (_, value) => {
       const cleanedPhoneNumber = value.replace(/[ -()]/g, "");
@@ -102,10 +208,11 @@
       }
       return Promise.resolve();
     };
-    const handleEmailChange = (e) => setEmail(e.target.value);
-    const handleCoverTypeChange = (value) => setCoverType(value);
+    const handleEmailChange = (e) => handleFormChange("email", e.target.value);
+    const handleCoverTypeChange = (value) =>
+      handleFormChange("coverType", value);
     const handleDoBChange = (date, dateString) => {
-      setDoB(dateString);
+      handleFormChange("dob", dateString);
     };
 
     const disableNotNumberKey = (event) => {
@@ -114,89 +221,118 @@
       }
     };
 
-    const formatValueWithCommas = (value) => {
-      return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    const handleSumChange = (value) => {
+      handleFormChange("sumAssured", value);
     };
 
-    const handleSumChange = (e) => {
-      setSumAssured(formatValueWithCommas(e.target.value));
+    const handleTermsInMonths = (value) => {
+      handleFormChange("termsInMonths", value);
     };
-
-    const handleTermsInMonths = (e) => {
-      const newValue = e.target.value;
-      setTermsInMonths(newValue);
-    };
-    const handlePremiumInstallments = (e) => {
-      const newValue = e.target.value;
-      setInstallments(newValue);
+    const handlePremiumInstallments = (value) => {
+      handleFormChange("installments", value);
     };
 
     const handleFrequencyChange = (e) => {
       console.log(e);
-      setFrequency(e);
+      handleFormChange("frequency", e);
     };
-    const handleRetrenchmentChange = (checked) => setRetrenchment(checked);
+    const handleRetrenchmentChange = (checked) =>
+      handleFormChange("retrenchment", checked);
 
     const disabledDate = (current) => {
       if (!current) return false;
 
       const selectedDate = new Date(current);
       const today = new Date();
-      const age = today.getFullYear() - selectedDate.getFullYear();
+
+      let age = today.getFullYear() - selectedDate.getFullYear();
+
+      const hasBirthdayOccurred =
+        today.getMonth() > selectedDate.getMonth() ||
+        (today.getMonth() === selectedDate.getMonth() &&
+          today.getDate() >= selectedDate.getDate());
+
+      if (!hasBirthdayOccurred) {
+        age--;
+      }
 
       return age < 18 || age > 65;
     };
 
-    const handleNumOfPartnersChange = (value) => setNumOfPartners(value);
+    const handleNumOfPartnersChange = (value) => {
+      handleFormChange("numOfPartners", parseInt(value));
+    };
     const handlePartnerDoBChange = (index, date, dateString) => {
       const updatedDates = [...partnerDates];
       updatedDates[index] = dateString;
-      setPartnerDates(updatedDates);
+      handleFormChange("partnerDates", updatedDates);
     };
 
     useEffect(() => {
-      setPartnerDates(Array(numOfPartners).fill(null));
-    }, [numOfPartners, coverType]);
+      form.resetFields(
+        Array.from(
+          { length: numOfPartners },
+          (_, index) => `dob_partner_${index}`
+        )
+      );
+      handleFormChange("partnerDates", Array(numOfPartners).fill(null));
+    }, [numOfPartners, form]);
 
     const onFinish = (values) => {
       console.log("Received values:", values);
     };
 
     const onFinishFailed = (errorInfo) => {
-      Notification.error({ message: errorInfo });
+      notification.error({ message: errorInfo });
     };
 
     const onFinished = () => {
-      const userInfo = {
-        Name: userName,
-        Country: country,
-        Phone: `${countryCode}${phone}`,
-        Email: email,
-        coverType: coverType,
-        numberOfPartners: numOfPartners,
-        userDateOfBirths: dob,
-        sumAssured: sumAssured.replace(/,/g, ""),
-        termsInMonths: termsInMonths,
-        frequency: frequency,
-        installments: installments,
-        individualRetrenchmentCover: retrenchment ? "Yes" : "No",
-      };
+      if (coverType === "") {
+        notification.error({
+          message: "Please select a type of cover.",
+        });
+        return;
+      }
 
-      setFormData(userInfo);
+      if (!dob) {
+        notification.error({
+          message: "Please provide your date of birth.",
+        });
+        return;
+      }
+
+      if (coverType === "Multiple") {
+        if (numOfPartners === 0) {
+          notification.error({
+            message: "Please select number of partners to cover.",
+          });
+          return;
+        }
+        if (partnerDates.includes(null)) {
+          notification.error({
+            message: "Please provide dates of births of all partners.",
+          });
+          return;
+        }
+      }
+
+      if (!installments) {
+        notification.error({
+          message: "Please provide number of installments.",
+        });
+        return;
+      }
 
       const contextObject = {
         userInfo: {
-          sumAssured: userInfo.sumAssured,
-          termsInMonths: userInfo.termsInMonths,
-          individualRetrenchmentCover: userInfo.individualRetrenchmentCover,
-          numberOfPartners:
-            userInfo.numberOfPartners > 0 ? userInfo.numberOfPartners : 1,
-          userDateOfBirths:
-            coverType !== "Multiple"
-              ? new Array(userInfo.userDateOfBirths)
-              : new Array(...partnerDates),
-          coverType: userInfo.coverType,
-          frequency: userInfo.frequency,
+          sumAssured: sumAssured,
+          termsInMonths: termsInMonths,
+          individualRetrenchmentCover: retrenchment,
+          annuitantDoB: dob,
+          numberOfPartners: numOfPartners,
+          partnersDatesOfBirths: partnerDates,
+          coverType: coverType,
+          frequency: frequency,
           numOfPremiumInstallments: installments,
         },
         memberDetails: [],
@@ -204,7 +340,7 @@
 
       console.log("Context Object", contextObject);
 
-      setLoading(true);
+      handleFormChange("loading", true);
 
       exe("ExeChain", {
         chain: "M3TrainingGroupCreditFixedRating",
@@ -213,33 +349,35 @@
         .then((response) => {
           const { ok, msg, outData } = response;
           if (!ok) {
-            Notification.error({ message: msg });
+            notification.error({ message: msg });
           } else {
-            setQuotationData(outData);
-            setIsDefaultTab("quotation");
-            setIsQuotationTabEnable(false);
+            handleQuotationChange(outData);
+            handleDefaultTabChange("quotation");
+            handleIsQuotationTabEnableChange(false);
           }
         })
         .catch((error) => {
-          Notification.error({
+          notification.error({
             message: "An error occurred while processing the quote.",
           });
         })
         .finally(() => {
-          setLoading(false);
+          handleFormChange("loading", false);
         });
     };
 
     return (
       <Form
+        form={form}
+        variant="filled"
         name='clientdetails'
         initialValues={{ remember: true }}
         layout='vertical'
         onFinish={onFinish}
         onFinishFailed={onFinishFailed}
       >
-        <Row gutter={32}>
-          <Col span={12}>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={24} md={12} lg={12} xl={12}>
             <Text strong>User Details</Text>
             <Item
               label='Name'
@@ -261,21 +399,26 @@
             >
               <Select
                 placeholder='Select Country'
-                onChange={handleCountryChange}
+                onChange={handleCountryCodeChange}
               >
-                {Object.keys(countryCodes).map((country) => (
-                  <Option key={country} value={country}>
-                    {country}
-                  </Option>
-                ))}
+                <Option value='Kenya'>Kenya (+254)</Option>
+                <Option value='Uganda'>Uganda (+256)</Option>
+                <Option value='Tanzania'>Tanzania (+255)</Option>
+                <Option value='Rwanda'>Rwanda (+250)</Option>
+                <Option value='Congo'>Congo (+123)</Option>
+                <Option value='South-Sudan'>South-Sudan (+211)</Option>
               </Select>
             </Item>
+
             <Item
               label='Phone No'
               name='phone'
               onKeyPress={disableNotNumberKey}
               rules={[
-                { required: true, message: "Please input your phone number!" },
+                {
+                  required: true,
+                  message: "Please input your phone number!",
+                },
                 { validator: validatePhone },
               ]}
             >
@@ -290,11 +433,14 @@
               label='Date Of Birth'
               name='dob'
               rules={[
-                { required: true, message: "Please input your date of birth!" },
+                {
+                  required: true,
+                  message: "Please input your date of birth!",
+                },
               ]}
             >
               <DatePicker
-                format='DD/MM/YYYY'
+                format='MM/DD/YYYY'
                 placeholder='Select Date of Birth'
                 onChange={handleDoBChange}
                 disabledDate={disabledDate}
@@ -319,15 +465,16 @@
             </Item>
           </Col>
 
-          <Col span={12}>
+          <Col xs={24} sm={24} md={12} lg={12} xl={12}>
             <Text strong>Product Details</Text>
             <Item
               label='Cover Type'
               name='coverType'
-              rules={[{ required: true, message: "Please select cover type!" }]}
+              // rules={[{ required: true, message: "Please select cover type!" }]}
             >
-              <Space wrap>
+              <Space direction='vertical' wrap style={{ width: "100%" }}>
                 <Select
+                  style={{ width: "100%" }}
                   placeholder='Select Cover Type'
                   onChange={handleCoverTypeChange}
                   options={[
@@ -354,33 +501,48 @@
                 },
               ]}
             >
-              <Input value={sumAssured} onChange={handleSumChange} />
+              <InputNumber
+                style={{
+                  width: "100%",
+                }}
+                value={sumAssured}
+                prefix='KSH'
+                formatter={(value) =>
+                  value.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                }
+                parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+                onChange={handleSumChange}
+              />
             </Item>
             <Item
               label='Terms In Months'
               name='termsinmonths'
               onKeyPress={disableNotNumberKey}
               rules={[
-                { required: true, message: "Please input terms in months!" },
-              ]}
-            >
-              <Input value={termsInMonths} onChange={handleTermsInMonths} />
-            </Item>
-            <Item
-              name='partners'
-              rules={[
                 {
                   required: true,
-                  message: "Please select number of partners to insure!",
+                  message: "Please input terms in months!",
                 },
               ]}
             >
-              <Space wrap>
+              <InputNumber
+                style={{ width: "100%" }}
+                onChange={handleTermsInMonths}
+              />
+            </Item>
+            <Item
+              label={<Text strong>Partners Details</Text>}
+              name='partners'
+              // rules={[
+              //   {
+              //     required: true,
+              //     message: "Please select number of partners to insure!",
+              //   },
+              // ]}
+            >
+              <Space direction='vertical' wrap style={{ width: "100%" }}>
                 <Select
-                  defaultValue='0'
-                  style={{
-                    width: 120,
-                  }}
+                  style={{ width: "100%" }}
                   onChange={handleNumOfPartnersChange}
                   disabled={coverType !== "Multiple"}
                   options={[
@@ -394,25 +556,43 @@
                 />
               </Space>
             </Item>
+
             {coverType === "Multiple" ? (
-              <div style={{ marginLeft: "10px" }}>
-                <Text strong>Partners Details</Text>
-                {Array.from({ length: numOfPartners }, (_, index) => (
-                  <Item
-                    key={`partner_${index}`}
-                    label={`Partner ${index + 1} Date of Birth`}
-                    name={`dob_partner_${index}`}
-                  >
-                    <DatePicker
-                      format='DD/MM/YYYY'
-                      placeholder={`Select Partner ${index + 1} Date of Birth`}
-                      onChange={(date, dateString) =>
-                        handlePartnerDoBChange(index, date, dateString)
-                      }
-                      disabledDate={disabledDate}
-                    />
-                  </Item>
-                ))}
+              <div>
+                <Row gutter={[8, 8]}>
+                  {Array.from({ length: numOfPartners }, (_, index) => (
+                    <Col
+                      xs={24}
+                      sm={12}
+                      md={12}
+                      lg={6}
+                      xl={6}
+                      key={`partner_${index}`}
+                    >
+                      <Form.Item
+                        label={`Partner ${index + 1} Date of Birth`}
+                        name={`dob_partner_${index}`}
+                        rules={[
+                          {
+                            required: true,
+                            message: "Please select a date of birth",
+                          },
+                        ]}
+                      >
+                        <DatePicker
+                          format='MM/DD/YYYY'
+                          placeholder={`Select Partner ${
+                            index + 1
+                          } Date of Birth`}
+                          onChange={(date, dateString) =>
+                            handlePartnerDoBChange(index, date, dateString)
+                          }
+                          disabledDate={disabledDate}
+                        />
+                      </Form.Item>
+                    </Col>
+                  ))}
+                </Row>
               </div>
             ) : null}
 
@@ -427,20 +607,24 @@
                 },
               ]}
             >
-              <Input
-                value={installments}
+              <InputNumber
+                style={{ width: "100%" }}
                 onChange={handlePremiumInstallments}
               />
             </Item>
             <Item
               label='Premium Frequency'
               name='frequency'
-              rules={[
-                { required: true, message: "Please select premium frequency!" },
-              ]}
+              // rules={[
+              //   {
+              //     required: true,
+              //     message: "Please select premium frequency!",
+              //   },
+              // ]}
             >
               <Space wrap>
                 <Select
+                  style={{ width: "100%" }}
                   defaultValue='Annual'
                   placeholder='Select frequency'
                   onChange={handleFrequencyChange}
@@ -469,7 +653,7 @@
               disabled={quoteSubmitted}
               onClick={onFinished}
             >
-              {loading ? "loading" : "Quote"}
+              {loading ? "Loading" : "Quote"}
             </Button>
           </Item>
         </Row>
@@ -477,7 +661,56 @@
     );
   };
 
-  const Quotation = () => {
+  const Quotation = ({ quotationData, formData }) => {
+    const {
+      userName,
+      country,
+      phone,
+      email,
+      coverType,
+      dob,
+      sumAssured,
+      countryCode,
+      termsInMonths,
+      numOfPartners,
+      frequency,
+      installments,
+      retrenchment,
+    } = formData;
+
+    const {
+      annuitantAge,
+      TermsInYears,
+      AnnualPremiumsPayable,
+      individualRetrenchmentCover,
+      GrossInsurancePremium,
+    } = quotationData;
+
+    let selectedcountry = "";
+
+    switch (countryCode) {
+      case "+254":
+        selectedcountry = "Kenya";
+        break;
+      case "256":
+        selectedcountry = "+Uganda";
+        break;
+      case "+255":
+        selectedcountry = "Tanzania";
+        break;
+      case "+250":
+        selectedcountry = "Rwanda";
+        break;
+      case "+123":
+        selectedcountry = "Congo";
+        break;
+      case "+211":
+        selectedcountry = "South Sudan";
+        break;
+      default:
+        selectedcountry = "Not Selected.";
+    }
+
     const columns = [
       {
         title: "Attribute",
@@ -494,56 +727,85 @@
       },
     ];
 
+    const dataUserDetailsColumns = [
+      {
+        title: "Attribute",
+        dataIndex: "attribute",
+        key: "attribute",
+        width: "30%",
+        render: (text) => <Text strong>{text}</Text>,
+      },
+      {
+        title: "Value",
+        dataIndex: "value",
+        key: "value",
+        width: "70%",
+      },
+    ];
+
     const dataUserDetails = [
-      { key: "name", attribute: "Name", value: formData.Name },
-      { key: "country", attribute: "Country", value: formData.Country },
-      { key: "phone", attribute: "Phone", value: formData.Phone },
-      { key: "email", attribute: "Email", value: formData.Email },
+      { key: "name", attribute: "Name", value: userName },
+      { key: "country", attribute: "Country", value: selectedcountry },
+      { key: "phone", attribute: "Phone", value: `${countryCode}${phone}` },
+      { key: "email", attribute: "Email", value: email },
       {
         key: "dob",
         attribute: "Date of Birth",
-        value: formData.userDateOfBirths,
+        value: dob,
       },
-      { key: "age", attribute: "Age", value: quotationData.Age },
+      { key: "age", attribute: "Age", value: annuitantAge - 1 },
     ];
 
     const dataPolicyDetails = [
       {
         key: "coverType",
         attribute: "Type of Cover",
-        value: formData.coverType,
+        value: coverType,
       },
       {
         key: "termsInMonths",
         attribute: "Terms in Months",
-        value: formData.termsInMonths,
+        value: termsInMonths,
       },
       {
         key: "termsInYears",
         attribute: "Terms in Years",
-        value: quotationData.TermsInYears,
+        value: TermsInYears,
       },
       {
         key: "sumAssured",
         attribute: "Initial Sum Assured",
-        value: formData.sumAssured,
+        value:
+          sumAssured &&
+          sumAssured.toLocaleString("en-US", {
+            style: "currency",
+            currency: "KSH",
+          }),
       },
       {
         key: "frequency",
         attribute: "Premium Frequency",
-        value: formData.frequency,
+        value: frequency,
       },
     ];
 
-    console.log("Retrenchment", formData.individualRetrenchmentCover);
+    if (coverType === "Multiple") {
+      dataPolicyDetails.push({
+        key: "numOfPartners",
+        attribute: "Number of partners",
+        value: numOfPartners,
+      });
+    }
+
+    console.log("Policy Details", dataPolicyDetails);
 
     const dataSelectedOptionalBenefitsDetails = [
       {
         key: "retrenchment",
         attribute: "Retrenchment Cover/Job Loss",
         value:
-          formData.coverType !== "Multiple"
-            ? formData.individualRetrenchmentCover === "Yes"
+          coverType !== "Multiple"
+            ? individualRetrenchmentCover
               ? "Yes"
               : "No"
             : "Not Applicable for Multiple Individuals & Partnerships",
@@ -554,19 +816,27 @@
       {
         key: "annualPremium",
         attribute: "Annual Premiums payable",
-        value: quotationData.AnnualPremiumsPayable,
+        value: AnnualPremiumsPayable.toLocaleString("en-US", {
+          style: "currency",
+          currency: "KSH",
+        }),
       },
       {
         key: "premiumInstallments",
         attribute: "Number of Premium Installments",
-        value: quotationData.PremiumInstallements,
+        value: installments,
       },
       {
         key: "totalPremium",
         attribute: "Total Premiums payable",
-        value: quotationData.GrossInsurancePremium,
+        value: GrossInsurancePremium.toLocaleString("en-US", {
+          style: "currency",
+          currency: "KSH",
+        }),
       },
     ];
+
+    console.log("Premium Details", dataPremiumDetails);
 
     return (
       <div style={{ maxWidth: "800px", margin: "auto" }}>
@@ -591,6 +861,7 @@
           dataSource={dataUserDetails}
           pagination={false}
           bordered
+          showHeader={false}
           size='middle'
           style={{
             border: "2px solid maroon",
@@ -607,6 +878,7 @@
           dataSource={dataPolicyDetails}
           pagination={false}
           bordered
+          showHeader={false}
           size='middle'
           style={{
             border: "2px solid maroon",
@@ -623,6 +895,7 @@
           dataSource={dataSelectedOptionalBenefitsDetails}
           pagination={false}
           bordered
+          showHeader={false}
           size='middle'
           style={{
             border: "2px solid maroon",
@@ -639,6 +912,7 @@
           dataSource={dataPremiumDetails}
           pagination={false}
           bordered
+          showHeader={false}
           size='middle'
           style={{
             border: "2px solid maroon",
@@ -657,35 +931,7 @@
       icon='calculator'
       extra={<Space> </Space>}
     >
-      <Tabs
-        defaultActiveKey={isDefaultTab}
-        activeKey={isDefaultTab}
-        onChange={(key) => setIsDefaultTab(key)}
-      >
-        <TabPane
-          tab={
-            <span>
-              <TabIcon />
-              Client Details
-            </span>
-          }
-          key='userdetails'
-        >
-          <ClientDetails />
-        </TabPane>
-        <TabPane
-          tab={
-            <span>
-              <TabIcon />
-              Quotation
-            </span>
-          }
-          key='quotation'
-          disabled={isQuotationTabEnable}
-        >
-          {quotationData ? <Quotation /> : <h1>Nothing to display</h1>}
-        </TabPane>
-      </Tabs>
+      <MainComponent />
     </DefaultPage>
   );
 };
