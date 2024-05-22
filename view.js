@@ -3,6 +3,7 @@
 /**
  * @author Emmanuel Chalo <emmanuel.chalo@equitybank.co.ke>
  * @created 2012-04-08
+ * @lastEdition 2024-5-21
  * @summary This custom view is for generating a customer quotation for the group credit.
  * @category view
  * @env equity
@@ -69,19 +70,23 @@
       termsInMonths: "",
       numOfPartners: 0,
       partnerDates: [],
-      frequency: "Annual",
-      installments: "",
+      frequency: "Single",
+      installments: 1,
       retrenchment: false,
+      gcRate: 0.675,
+      retRate: 0.775,
+      discount: 70,
+      freeCoverLimit: 5000000,
       quoteSubmitted: false,
       quotationData: null,
       loading: false,
     });
 
     const handleFormChange = (fieldName, value) => {
-      setFormData({
-        ...formData,
+      setFormData((prevFormData) => ({
+        ...prevFormData,
         [fieldName]: value,
-      });
+      }));
     };
 
     const handleQuotationChange = (data) => {
@@ -161,6 +166,10 @@
       frequency,
       installments,
       retrenchment,
+      gcRate,
+      retRate,
+      discount,
+      freeCoverLimit,
       quoteSubmitted,
       loading,
     } = formData;
@@ -228,16 +237,51 @@
     const handleTermsInMonths = (value) => {
       handleFormChange("termsInMonths", value);
     };
-    const handlePremiumInstallments = (value) => {
-      handleFormChange("installments", value);
+    const handleFrequencyChange = (value) => {
+      handleFormChange("frequency", value);
+      let installmentValue;
+      switch (value) {
+        case "Annually":
+          installmentValue = 1;
+          break;
+        case "SemiAnnually":
+          installmentValue = 2;
+          break;
+        case "Quarterly":
+          installmentValue = 4;
+          break;
+        case "Monthly":
+          installmentValue = 12;
+          break;
+        default:
+          installmentValue = 1;
+      }
+
+      handleFormChange("installments", installmentValue);
     };
 
-    const handleFrequencyChange = (e) => {
-      console.log(e);
-      handleFormChange("frequency", e);
+    const handlePremiumInstallments = (e) => {
+      handleFormChange("installments", e.target.value);
     };
+
     const handleRetrenchmentChange = (checked) =>
       handleFormChange("retrenchment", checked);
+
+    const handleGCRateChange = (value) => {
+      handleFormChange("gcRate", value);
+    };
+
+    const handleRETRateChange = (value) => {
+      handleFormChange("retRate", value);
+    };
+
+    const handleDiscountChange = (value) => {
+      handleFormChange("discount", value);
+    };
+
+    const handleFreeCoverLimitChange = (value) => {
+      handleFormChange("freeCoverLimit", value);
+    };
 
     const disabledDate = (current) => {
       if (!current) return false;
@@ -278,7 +322,7 @@
       handleFormChange("partnerDates", Array(numOfPartners).fill(null));
     }, [numOfPartners, form]);
 
-    const onFinish = (values) => {
+    const onFinish = () => {
       console.log("Received values:", values);
     };
 
@@ -325,20 +369,22 @@
 
       const contextObject = {
         userInfo: {
+          memberName: userName,
           sumAssured: sumAssured,
           termsInMonths: termsInMonths,
-          individualRetrenchmentCover: retrenchment,
+          individualRetrenchmentCover: retrenchment === true ? "Yes" : "No",
           annuitantDoB: dob,
           numberOfPartners: numOfPartners,
           partnersDatesOfBirths: partnerDates,
           coverType: coverType,
           frequency: frequency,
-          numOfPremiumInstallments: installments,
+          retRate: retRate,
+          gcRate: gcRate,
+          discount: discount,
+          freeCoverLimit: freeCoverLimit,
         },
         memberDetails: [],
       };
-
-      console.log("Context Object", contextObject);
 
       handleFormChange("loading", true);
 
@@ -369,16 +415,16 @@
     return (
       <Form
         form={form}
-        variant="filled"
+        variant='filled'
         name='clientdetails'
         initialValues={{ remember: true }}
         layout='vertical'
-        onFinish={onFinish}
+        onSubmit={onFinish}
         onFinishFailed={onFinishFailed}
       >
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-            <Text strong>User Details</Text>
+            <Text strong>User Details(Principal Member)</Text>
             <Item
               label='Name'
               name='username'
@@ -430,7 +476,11 @@
               />
             </Item>
             <Item
-              label='Date Of Birth'
+              label={
+                coverType === "Multiple"
+                  ? "Partner 1 Date Of Birth"
+                  : "Date Of Birth"
+              }
               name='dob'
               rules={[
                 {
@@ -467,11 +517,7 @@
 
           <Col xs={24} sm={24} md={12} lg={12} xl={12}>
             <Text strong>Product Details</Text>
-            <Item
-              label='Cover Type'
-              name='coverType'
-              // rules={[{ required: true, message: "Please select cover type!" }]}
-            >
+            <Item label='Cover Type' name='coverType'>
               <Space direction='vertical' wrap style={{ width: "100%" }}>
                 <Select
                   style={{ width: "100%" }}
@@ -531,14 +577,8 @@
               />
             </Item>
             <Item
-              label={<Text strong>Partners Details</Text>}
+              label={<Text strong>Other Partner Details</Text>}
               name='partners'
-              // rules={[
-              //   {
-              //     required: true,
-              //     message: "Please select number of partners to insure!",
-              //   },
-              // ]}
             >
               <Space direction='vertical' wrap style={{ width: "100%" }}>
                 <Select
@@ -546,12 +586,12 @@
                   onChange={handleNumOfPartnersChange}
                   disabled={coverType !== "Multiple"}
                   options={[
+                    { value: "1", label: 1 },
                     { value: "2", label: 2 },
                     { value: "3", label: 3 },
                     { value: "4", label: 4 },
                     { value: "5", label: 5 },
                     { value: "6", label: 6 },
-                    { value: "7", label: 7 },
                   ]}
                 />
               </Space>
@@ -559,7 +599,7 @@
 
             {coverType === "Multiple" ? (
               <div>
-                <Row gutter={[8, 8]}>
+                <Row gutter={[16, 16]}>
                   {Array.from({ length: numOfPartners }, (_, index) => (
                     <Col
                       xs={24}
@@ -570,7 +610,7 @@
                       key={`partner_${index}`}
                     >
                       <Form.Item
-                        label={`Partner ${index + 1} Date of Birth`}
+                        label={`Partner ${index + 2} Date of Birth`}
                         name={`dob_partner_${index}`}
                         rules={[
                           {
@@ -582,7 +622,7 @@
                         <DatePicker
                           format='MM/DD/YYYY'
                           placeholder={`Select Partner ${
-                            index + 1
+                            index + 2
                           } Date of Birth`}
                           onChange={(date, dateString) =>
                             handlePartnerDoBChange(index, date, dateString)
@@ -596,45 +636,40 @@
               </div>
             ) : null}
 
-            <Item
-              label='Number of Premium Installments'
-              name='installments'
-              onKeyPress={disableNotNumberKey}
-              rules={[
-                {
-                  required: true,
-                  message: "Please input number of premium installments!",
-                },
-              ]}
-            >
-              <InputNumber
-                style={{ width: "100%" }}
-                onChange={handlePremiumInstallments}
-              />
-            </Item>
-            <Item
-              label='Premium Frequency'
-              name='frequency'
-              // rules={[
-              //   {
-              //     required: true,
-              //     message: "Please select premium frequency!",
-              //   },
-              // ]}
-            >
-              <Space wrap>
-                <Select
-                  style={{ width: "100%" }}
-                  defaultValue='Annual'
-                  placeholder='Select frequency'
-                  onChange={handleFrequencyChange}
-                  options={[
-                    { value: "Annual", label: "Annual" },
-                    { value: "Single", label: "Single" },
-                  ]}
-                ></Select>
-              </Space>
-            </Item>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                <Item label='Premium Frequency' name='frequency'>
+                  <Select
+                    style={{ width: "100%" }}
+                    defaultValue='Single'
+                    placeholder='Select frequency'
+                    onChange={handleFrequencyChange}
+                    options={[
+                      { value: "Single", label: "Single" },
+                      { value: "Annual", label: "Annual" },
+                      { value: "SemiAnnually", label: "Semi-Annually" },
+                      { value: "Quarterly", label: "Quarterly" },
+                      { value: "Monthly", label: "Monthly" },
+                    ]}
+                  />
+                </Item>
+              </Col>
+              <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                <Item
+                  label={<Text>Number of Premium Installments</Text>}
+                  name='installments'
+                >
+                  <Space direction='vertical' wrap style={{ width: "100%" }}>
+                    <Input
+                      onChange={handlePremiumInstallments}
+                      readOnly={true}
+                      value={installments}
+                    />
+                  </Space>
+                </Item>
+              </Col>
+            </Row>
+
             {coverType === "Single" ? (
               <Item label='Retrenchment Cover?'>
                 <Switch
@@ -645,6 +680,72 @@
             ) : null}
           </Col>
         </Row>
+
+        <div
+          style={{ borderBottom: "2px solid #d9d9d9", margin: "24px 0" }}
+        ></div>
+
+        <div>
+          <Text strong>Product parameters</Text>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} md={12} lg={6} xl={6}>
+              <Item label='Group credit (gc) rate' name='gcrate'>
+                <InputNumber
+                  style={{ width: "100%" }}
+                  defaultValue={gcRate}
+                  formatter={(value) => `${value}%`}
+                  parser={(value) => value.replace("%", "")}
+                  readOnly={true}
+                  onKeyPress={disableNotNumberKey}
+                  onChange={handleGCRateChange}
+                />
+              </Item>
+            </Col>
+            <Col xs={24} sm={12} md={12} lg={6} xl={6}>
+              <Item label='Retrenchment rate (ret) rate' name='retrate'>
+                <InputNumber
+                  style={{ width: "100%" }}
+                  defaultValue={retRate}
+                  formatter={(value) => `${value}%`}
+                  parser={(value) => value.replace("%", "")}
+                  readOnly={true}
+                  onKeyPress={disableNotNumberKey}
+                  onChange={handleRETRateChange}
+                />
+              </Item>
+            </Col>
+            <Col xs={24} sm={12} md={12} lg={6} xl={6}>
+              <Item label='Discount' name='discount'>
+                <InputNumber
+                  style={{ width: "100%" }}
+                  defaultValue={discount}
+                  formatter={(value) => `${value}%`}
+                  parser={(value) => value.replace("%", "")}
+                  readOnly={true}
+                  onKeyPress={disableNotNumberKey}
+                  onChange={handleDiscountChange}
+                />
+              </Item>
+            </Col>
+            <Col xs={24} sm={12} md={12} lg={6} xl={6}>
+              <Item label='Free cover limit' name='freecoverlimit'>
+                <InputNumber
+                  style={{ width: "100%" }}
+                  defaultValue={freeCoverLimit}
+                  readOnly={true}
+                  onKeyPress={disableNotNumberKey}
+                  prefix='KSH'
+                  formatter={(value) =>
+                    value.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                  }
+                  parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+                  onChange={handleFreeCoverLimitChange}
+                />
+              </Item>
+            </Col>
+          </Row>
+        </div>
+
         <Row justify='end'>
           <Item>
             <Button
@@ -684,68 +785,28 @@
       AnnualPremiumsPayable,
       individualRetrenchmentCover,
       GrossInsurancePremium,
+      medicalRequirements,
     } = quotationData;
-
-    let selectedcountry = "";
-
-    switch (countryCode) {
-      case "+254":
-        selectedcountry = "Kenya";
-        break;
-      case "256":
-        selectedcountry = "+Uganda";
-        break;
-      case "+255":
-        selectedcountry = "Tanzania";
-        break;
-      case "+250":
-        selectedcountry = "Rwanda";
-        break;
-      case "+123":
-        selectedcountry = "Congo";
-        break;
-      case "+211":
-        selectedcountry = "South Sudan";
-        break;
-      default:
-        selectedcountry = "Not Selected.";
-    }
 
     const columns = [
       {
         title: "Attribute",
         dataIndex: "attribute",
         key: "attribute",
-        width: "30%",
+        width: "50%",
         render: (text) => <Text strong>{text}</Text>,
       },
       {
         title: "Value",
         dataIndex: "value",
         key: "value",
-        width: "70%",
-      },
-    ];
-
-    const dataUserDetailsColumns = [
-      {
-        title: "Attribute",
-        dataIndex: "attribute",
-        key: "attribute",
-        width: "30%",
-        render: (text) => <Text strong>{text}</Text>,
-      },
-      {
-        title: "Value",
-        dataIndex: "value",
-        key: "value",
-        width: "70%",
+        width: "50%",
       },
     ];
 
     const dataUserDetails = [
       { key: "name", attribute: "Name", value: userName },
-      { key: "country", attribute: "Country", value: selectedcountry },
+      { key: "country", attribute: "Country", value: country },
       { key: "phone", attribute: "Phone", value: `${countryCode}${phone}` },
       { key: "email", attribute: "Email", value: email },
       {
@@ -756,11 +817,45 @@
       { key: "age", attribute: "Age", value: annuitantAge - 1 },
     ];
 
+    let coverTypeTitle;
+    let premiumsAttr;
+    let numOfPremiumAttr;
+
+    switch (frequency) {
+      case "Single":
+        coverTypeTitle = `Single`;
+        premiumsAttr = `Total`;
+        numOfPremiumAttr = ``;
+        break;
+      case "Annual":
+        coverTypeTitle = `Annually`;
+        premiumsAttr = `Annual`;
+        numOfPremiumAttr = ` every year`;
+        break;
+      case "SemiAnnually":
+        coverTypeTitle = `SemiAnnually`;
+        premiumsAttr = `Semi-Annual`;
+        numOfPremiumAttr = ` per year`;
+        break;
+      case "Quarterly":
+        coverTypeTitle = `Quarterly`;
+        premiumsAttr = `Quarterly`;
+        numOfPremiumAttr = ` per year`;
+        break;
+      case "Monthly":
+        coverTypeTitle = `Monthly`;
+        premiumsAttr = "Monthly";
+        numOfPremiumAttr = ` per year`;
+        break;
+      default:
+        premiumsAttr = "";
+    }
+
     const dataPolicyDetails = [
       {
         key: "coverType",
         attribute: "Type of Cover",
-        value: coverType,
+        value: coverTypeTitle,
       },
       {
         key: "termsInMonths",
@@ -797,8 +892,6 @@
       });
     }
 
-    console.log("Policy Details", dataPolicyDetails);
-
     const dataSelectedOptionalBenefitsDetails = [
       {
         key: "retrenchment",
@@ -815,7 +908,7 @@
     const dataPremiumDetails = [
       {
         key: "annualPremium",
-        attribute: "Annual Premiums payable",
+        attribute: `${premiumsAttr} Premiums payable`,
         value: AnnualPremiumsPayable.toLocaleString("en-US", {
           style: "currency",
           currency: "KSH",
@@ -823,7 +916,7 @@
       },
       {
         key: "premiumInstallments",
-        attribute: "Number of Premium Installments",
+        attribute: `Number of Premium Installments${numOfPremiumAttr}`,
         value: installments,
       },
       {
@@ -836,91 +929,185 @@
       },
     ];
 
-    console.log("Premium Details", dataPremiumDetails);
+    const today = new Date();
+    const options = { month: "long", day: "numeric", year: "numeric" };
+    const formattedDate = today.toLocaleDateString("en-US", options);
 
     return (
-      <div style={{ maxWidth: "800px", margin: "auto" }}>
-        <Row justify='end'>
-          <img
-            src='https://th.bing.com/th/id/OIP.slQhzvN6Tzo0RxGP9AiQSgAAAA?rs=1&pid=ImgDetMain'
-            alt='Company Logo'
+      <>
+        <div
+          style={{
+            border: "2px solid black",
+            maxWidth: "800px",
+            margin: "auto",
+            position: "relative",
+            paddingBottom: "60px",
+          }}
+        >
+          <div style={{ maxWidth: "750px", margin: "auto" }}>
+            <Row
+              justify='space-between'
+              align='middle'
+              style={{ marginTop: "20px" }}
+            >
+              <Col>
+                <Title level={4} style={{ margin: 0 }}>
+                  EQUITY LIFE ASSURANCE (KENYA) LIMITED
+                </Title>
+                <Title level={4} style={{ margin: 0 }}>
+                  Group Credit Quotation
+                </Title>
+              </Col>
+              <Col>
+                <div style={{ textAlign: "right" }}>
+                  <img
+                    src='https://th.bing.com/th/id/OIP.slQhzvN6Tzo0RxGP9AiQSgAAAA?rs=1&pid=ImgDetMain'
+                    alt='Company Logo'
+                    style={{
+                      maxWidth: "100px",
+                      maxHeight: "120px",
+                      marginLeft: "30px",
+                    }}
+                  />
+                  <Text style={{ display: "block", marginTop: "10px" }} strong>
+                    Date: {formattedDate}
+                  </Text>
+                </div>
+              </Col>
+            </Row>
+
+            <Title style={{ textAlign: "center" }} level={4}>
+              Client Details
+            </Title>
+            <Table
+              columns={columns}
+              dataSource={dataUserDetails}
+              pagination={false}
+              bordered
+              showHeader={false}
+              size='middle'
+              style={{
+                border: "2px solid maroon",
+                padding: "20px",
+                marginBottom: "20px",
+              }}
+            />
+
+            <Title style={{ textAlign: "center" }} level={4}>
+              Policy Details
+            </Title>
+            <Table
+              columns={columns}
+              dataSource={dataPolicyDetails}
+              pagination={false}
+              bordered
+              showHeader={false}
+              size='middle'
+              style={{
+                border: "2px solid maroon",
+                padding: "20px",
+                marginBottom: "20px",
+              }}
+            />
+
+            <Title style={{ textAlign: "center" }} level={4}>
+              Selected Optional Benefits
+            </Title>
+            <Table
+              columns={columns}
+              dataSource={dataSelectedOptionalBenefitsDetails}
+              pagination={false}
+              bordered
+              showHeader={false}
+              size='middle'
+              style={{
+                border: "2px solid maroon",
+                padding: "20px",
+                marginBottom: "20px",
+              }}
+            />
+
+            <Title style={{ textAlign: "center" }} level={4}>
+              Premium Details
+            </Title>
+            <Table
+              columns={columns}
+              dataSource={dataPremiumDetails}
+              pagination={false}
+              bordered
+              showHeader={false}
+              size='middle'
+              style={{
+                border: "2px solid maroon",
+                padding: "20px",
+                marginBottom: "20px",
+              }}
+            />
+          </div>
+          <div
             style={{
-              maxWidth: "100px",
-              maxHeight: "120px",
+              textAlign: "justify",
               marginTop: "20px",
-              marginLeft: "30px",
+              marginLeft: "15px",
+              padding: "10px",
             }}
-          />
-        </Row>
+          >
+            <Text strong>Notes:</Text>
+            <br />
+            <Text>Quotation is valid for 90 days since the date of issue</Text>
+            <br />
+            <Text>Premium is Indicative: Medicals Required</Text>
+            <br />
+            <Text strong style={{ color: "red" }}>
+              Medical Requirements
+            </Text>
+            {/* <br />
+            <Text>1. Medical Examiner's Report</Text>
+            <br />
+            <Text>
+              2. Blood Profile (ESR, CBC) and Blood Chemistry Studies (FBS,
+              Cholesterol, SGPT, SGOT, Creatinine or Serum Urea)
+            </Text>
+            <br />
+            <Text>3. Urinalysis Report</Text>
+            <br /> */}
+            <br />
+            <Text>1. {medicalRequirements}</Text>
+            <br />
+            <br />
+            <Text strong>Term & Conditions</Text>
+            <br />
+            <a
+              href='http://www.equity.co.ke/insurance_termlife'
+              target='_blank'
+              rel='noopener noreferrer'
+            >
+              www.equity.co.ke/insurance_termlife
+            </a>
+            <br />
+            <Text strong>Contacts</Text>
+            <br />
+            <Text>Email: quotations@equityinsurance.co.ke</Text>
+            <br />
+            <Text>Tel: 0765000000</Text>
+            <br />
+          </div>
 
-        <Title style={{ textAlign: "center" }} level={4}>
-          Client Details
-        </Title>
-        <Table
-          columns={columns}
-          dataSource={dataUserDetails}
-          pagination={false}
-          bordered
-          showHeader={false}
-          size='middle'
-          style={{
-            border: "2px solid maroon",
-            padding: "20px",
-            marginBottom: "20px",
-          }}
-        />
-
-        <Title style={{ textAlign: "center" }} level={4}>
-          Policy Details
-        </Title>
-        <Table
-          columns={columns}
-          dataSource={dataPolicyDetails}
-          pagination={false}
-          bordered
-          showHeader={false}
-          size='middle'
-          style={{
-            border: "2px solid maroon",
-            padding: "20px",
-            marginBottom: "20px",
-          }}
-        />
-
-        <Title style={{ textAlign: "center" }} level={4}>
-          Selected Optional Benefits
-        </Title>
-        <Table
-          columns={columns}
-          dataSource={dataSelectedOptionalBenefitsDetails}
-          pagination={false}
-          bordered
-          showHeader={false}
-          size='middle'
-          style={{
-            border: "2px solid maroon",
-            padding: "20px",
-            marginBottom: "20px",
-          }}
-        />
-
-        <Title style={{ textAlign: "center" }} level={4}>
-          Premium Details
-        </Title>
-        <Table
-          columns={columns}
-          dataSource={dataPremiumDetails}
-          pagination={false}
-          bordered
-          showHeader={false}
-          size='middle'
-          style={{
-            border: "2px solid maroon",
-            padding: "20px",
-            marginBottom: "20px",
-          }}
-        />
-      </div>
+          <div
+            style={{
+              backgroundColor: "maroon",
+              position: "absolute",
+              bottom: "0",
+              width: "100%",
+              textAlign: "center",
+              color: "white",
+              padding: "5px 0",
+            }}
+          >
+            Equity Life Assurance (Kenya) Limited
+          </div>
+        </div>
+      </>
     );
   };
 
