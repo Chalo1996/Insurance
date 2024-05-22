@@ -3,7 +3,7 @@
 /**
  * @author Emmanuel Chalo <emmanuel.chalo@equitybank.co.ke>
  * @created 2012-04-08
- * @lastEdition 2024-5-21
+ * @lastEdition 2024-05-21
  * @summary This custom view is for generating a customer quotation for the group credit.
  * @category view
  * @env equity
@@ -888,7 +888,7 @@
       dataPolicyDetails.push({
         key: "numOfPartners",
         attribute: "Number of partners",
-        value: numOfPartners,
+        value: numOfPartners + 1,
       });
     }
 
