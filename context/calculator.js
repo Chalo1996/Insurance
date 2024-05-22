@@ -7,7 +7,7 @@
  * @description: Commands for calculating various benefits and total premiums payable for group credit fixed rating.
  * @category View
  * @createDate 02-4-2024
- * @lastEdition 03-4-2024
+ * @lastEdition 20-5-2024
  * @chain M3TrainingGroupCreditFixedRating
  * @lastEditionBy Emmanuel Chalo
  * History
@@ -27,17 +27,42 @@ const constants = {
   deathOutstandingLoanAmountUnitRate: 5.5,
   policyEffectiveDate: "1/1/22",
   illnessRiderConst: 3000000,
-  freeCoverLimit: 15000000,
-  retRate: 0.00775,
-  gcRate: 0.00675,
-  discount: 0.7,
+  freeCoverLimitMedical: 15000000,
 };
 
 const userInfo = _userInfo;
 const memberDetails = _memberDetails;
 const frequency = userInfo.frequency;
-const numOfPremiumInstallments = userInfo.numOfPremiumInstallments;
 const numberOfPartners = userInfo.numberOfPartners;
+const covertype = userInfo.coverType;
+const retRate = parseFloat(userInfo.retRate / 100);
+const gcRate = parseFloat(userInfo.gcRate / 100);
+const discount = parseFloat(userInfo.discount / 100);
+const freeCoverLimitGC = userInfo.freeCoverLimit;
+
+// Not used currently but might be useful in future
+let numOfPremiumInstallments;
+switch (frequency) {
+  case "Annual":
+    numOfPremiumInstallments = 1;
+    break;
+  case "SemiAnnually":
+    numOfPremiumInstallments = 2;
+    break;
+  case "Quarterly":
+    numOfPremiumInstallments = 4;
+    break;
+  case "Monthly":
+    numOfPremiumInstallments = 12;
+    break;
+  default:
+    numOfPremiumInstallments = 1;
+}
+
+let grossInsurancePremium = 0;
+let annualPremiumsPayable = 0;
+const retrenchment =
+  userInfo.individualRetrenchmentCover === "Yes" ? true : false;
 
 const medicalRequirementsChoices = {
   A: "A",
@@ -102,10 +127,6 @@ const calculateLoanDaysOnCover = (
   return loanDaysOnCover;
 };
 
-const covertype = userInfo.coverType;
-let grossInsurancePremium = 0;
-const retrenchment =
-  userInfo.individualRetrenchmentCover === "Yes" ? true : false;
 const annuitantAge = calculateAge(userInfo.annuitantDoB);
 
 const getPartnersAges = () => {
@@ -133,93 +154,33 @@ const verifyEachPartnerAge = () => {
 const [P, T, N] = [
   userInfo.sumAssured,
   userInfo.termsInMonths,
-  covertype === "Multiple" ? numberOfPartners : 1,
+  covertype === "Multiple" ? numberOfPartners + 1 : 1,
 ];
 
 const premiumFormular =
-  constants.gcRate * P * (T / 12) +
-  constants.gcRate * P * (T / 12) * constants.discount * (N - 1);
+  gcRate * P * (T / 12) + gcRate * P * (T / 12) * discount * (N - 1);
 
-// Rounding function to zero decimal places (nearest integer)
-const roundToZeroDecimalPlaces = (value) => {
-  return Math.round(value);
+// Round of to One Decimal Place
+const roundOf = (value) => {
+  return Math.round(value * 10) / 10;
 };
 
-memberDetails.forEach((member) => {
-  member.ANB = calculateAge(member.DoB);
-  member.sumAssuredWithinFCL = roundToZeroDecimalPlaces(
-    Math.min(member.loanAmountOrOSBalance, constants.freeCoverLimit)
-  );
-  member.sumAssuredAboveFCL = roundToZeroDecimalPlaces(
-    member.fullSumAssured - member.sumAssuredWithinFCL
-  );
-  member.noOfDaysOnCover = roundToZeroDecimalPlaces(
-    calculateLoanDaysOnCover(
-      member.loanIssueDate,
-      member.loanRepaymentPeriodInMonths,
-      constants.policyEffectiveDate
-    )
-  );
-  member.death = roundToZeroDecimalPlaces(
-    (member.fullSumAssured *
-      constants.deathOutstandingLoanAmountUnitRate *
-      member.noOfDaysOnCover) /
-      (constants.thousandRate * constants.year)
-  );
-  member.criticalIllnessRider = roundToZeroDecimalPlaces(
-    Math.min(
-      constants.criticalIllnessRiderDiscount * member.fullSumAssured,
-      constants.illnessRiderConst
-    )
-  );
-  member.medicalLoading = roundToZeroDecimalPlaces(
-    (member.sumAssuredAboveFCL *
-      constants.deathOutstandingLoanAmountUnitRate *
-      member.acceptanceTerms) /
-      (constants.thousandRate * 100)
-  );
-  member.PTD = roundToZeroDecimalPlaces(
-    (member.permanentTotalDisability *
-      constants.totalDisabilityoutstandingLoanAmountUnitRate *
-      member.noOfDaysOnCover) /
-      (constants.thousandRate * constants.year)
-  );
-  member.criticalIllNess = roundToZeroDecimalPlaces(
-    (member.criticalIllnessRider *
-      constants.criticalIllnessStandAloneAcceleratedUnitRate *
-      member.noOfDaysOnCover) /
-      (constants.thousandRate * constants.year)
-  );
-  member.funeralExpenseOne = roundToZeroDecimalPlaces(
-    (member.lastExpense *
-      constants.lastexpenseUnitRate *
-      member.noOfDaysOnCover) /
-      (constants.thousandRate * constants.year)
-  );
-  member.funeralExpenseTwo = roundToZeroDecimalPlaces(
-    (member.retrenchment *
-      constants.retrenchmentUnitRate *
-      member.noOfDaysOnCover) /
-      (constants.thousandRate * constants.year)
-  );
-  member.totalAnnualPremiums = roundToZeroDecimalPlaces(
-    member.death +
-      member.medicalLoading +
-      member.PTD +
-      member.criticalIllNess +
-      member.funeralExpenseOne +
-      member.funeralExpenseTwo
-  );
-});
+const termsInYears = roundOf(userInfo.termsInMonths / 12);
 
-let annualPremiumsPayable = 0;
-
-const termsInYears = roundToZeroDecimalPlaces(userInfo.termsInMonths / 12);
+const divider =
+  frequency === "Annual"
+    ? termsInYears
+    : frequency === "Monthly"
+    ? userInfo.termsInMonths
+    : frequency === "Quarterly"
+    ? termsInYears * 4
+    : frequency === "SemiAnnually"
+    ? termsInYears * 2
+    : 1;
 
 if (covertype === "Single" && retrenchment) {
   grossInsurancePremium =
-    premiumFormular +
-    (constants.retRate - constants.gcRate) * userInfo.sumAssured;
+    premiumFormular + (retRate - gcRate) * userInfo.sumAssured;
 } else if (
   covertype === "Multiple" ||
   (covertype === "Single" && !retrenchment)
@@ -229,9 +190,94 @@ if (covertype === "Single" && retrenchment) {
   grossInsurancePremium = 0;
 }
 
-annualPremiumsPayable = roundToZeroDecimalPlaces(
-  grossInsurancePremium / numOfPremiumInstallments
-);
+annualPremiumsPayable = roundOf(grossInsurancePremium / divider);
+
+annualPremiumsPayable = Math.round(annualPremiumsPayable);
+grossInsurancePremium = Math.round(grossInsurancePremium);
+
+// Group and Medical Requirements Section
+memberDetails.push({
+  memberName: userInfo.memberName,
+  idNumber: 67676767,
+  DoB: userInfo.annuitantDoB,
+  loanAccountNumber: 98776868,
+  loanAmountOrOSBalance: 5000000,
+  loanRepaymentPeriodInMonths: userInfo.termsInMonths,
+  loanInterestRate: 14.5,
+  loanIssueDate: "1/1/2024",
+  fullSumAssured: userInfo.sumAssured,
+  permanentTotalDisability: 5000000,
+  lastExpense: 150000,
+  individualRetrenchmentCover: 5000000,
+  acceptanceTerms: 0,
+});
+
+memberDetails.forEach((member) => {
+  member.ANB = calculateAge(member.DoB);
+  member.sumAssuredWithinFCL = roundOf(
+    Math.min(member.loanAmountOrOSBalance, constants.freeCoverLimitMedical)
+  );
+  member.sumAssuredAboveFCL = roundOf(
+    member.fullSumAssured - member.sumAssuredWithinFCL
+  );
+  member.noOfDaysOnCover = roundOf(
+    calculateLoanDaysOnCover(
+      member.loanIssueDate,
+      member.loanRepaymentPeriodInMonths,
+      constants.policyEffectiveDate
+    )
+  );
+  member.death = roundOf(
+    (member.fullSumAssured *
+      constants.deathOutstandingLoanAmountUnitRate *
+      member.noOfDaysOnCover) /
+      (constants.thousandRate * constants.year)
+  );
+  member.criticalIllnessRider = roundOf(
+    Math.min(
+      constants.criticalIllnessRiderDiscount * member.fullSumAssured,
+      constants.illnessRiderConst
+    )
+  );
+  member.medicalLoading = roundOf(
+    (member.sumAssuredAboveFCL *
+      constants.deathOutstandingLoanAmountUnitRate *
+      member.acceptanceTerms) /
+      (constants.thousandRate * 100)
+  );
+  member.PTD = roundOf(
+    (member.permanentTotalDisability *
+      constants.totalDisabilityoutstandingLoanAmountUnitRate *
+      member.noOfDaysOnCover) /
+      (constants.thousandRate * constants.year)
+  );
+  member.criticalIllNess = roundOf(
+    (member.criticalIllnessRider *
+      constants.criticalIllnessStandAloneAcceleratedUnitRate *
+      member.noOfDaysOnCover) /
+      (constants.thousandRate * constants.year)
+  );
+  member.funeralExpenseOne = roundOf(
+    (member.lastExpense *
+      constants.lastexpenseUnitRate *
+      member.noOfDaysOnCover) /
+      (constants.thousandRate * constants.year)
+  );
+  member.funeralExpenseTwo = roundOf(
+    (member.individualRetrenchmentCover *
+      constants.retrenchmentUnitRate *
+      member.noOfDaysOnCover) /
+      (constants.thousandRate * constants.year)
+  );
+  member.totalAnnualPremiums = roundOf(
+    member.death +
+      member.medicalLoading +
+      member.PTD +
+      member.criticalIllNess +
+      member.funeralExpenseOne +
+      member.funeralExpenseTwo
+  );
+});
 
 memberDetails.forEach((member) => {
   member.medicalRequirements = medicalRequirementsChoices.NONE;
@@ -287,12 +333,18 @@ return {
   P,
   T,
   N,
+  retRate,
+  gcRate,
+  discount,
+  freeCoverLimitGC,
   Frequency: userInfo.frequency,
   PremiumInstallements: numOfPremiumInstallments,
   GrossInsurancePremium: grossInsurancePremium,
-  individualRetrenchmentCover: userInfo.individualRetrenchmentCover,
+  individualRetrenchmentCover: retrenchment,
   annuitantAge,
   AnnualPremiumsPayable: annualPremiumsPayable,
   TermsInYears: termsInYears,
   memberDetails,
+  medicalRequirements:
+    memberDetails[memberDetails.length - 1].medicalRequirements,
 };
